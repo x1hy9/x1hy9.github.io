@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://x1hy9.github.io</id>
     <title>Kimengun的学习之路</title>
-    <updated>2021-02-16T10:47:36.372Z</updated>
+    <updated>2021-02-17T11:06:55.660Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://x1hy9.github.io"/>
     <link rel="self" href="https://x1hy9.github.io/atom.xml"/>
@@ -10,6 +10,77 @@
     <logo>https://x1hy9.github.io/images/avatar.png</logo>
     <icon>https://x1hy9.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, Kimengun的学习之路</rights>
+    <entry>
+        <title type="html"><![CDATA[内网渗透主机发现技巧]]></title>
+        <id>https://x1hy9.github.io/post/nei-wang-shen-tou-zhu-ji-fa-xian-ji-qiao/</id>
+        <link href="https://x1hy9.github.io/post/nei-wang-shen-tou-zhu-ji-fa-xian-ji-qiao/">
+        </link>
+        <updated>2021-02-17T11:05:34.000Z</updated>
+        <content type="html"><![CDATA[<p><img src="https://x1hy9.github.io/post-images/1613559951955.jpg" alt="" loading="lazy"><br>
+当我们拿到一台主机准备横向移动的时候我们需要做以下这些事情这样会比较快速的定位到内网中存活的其他主机</p>
+<h3 id="确定ip段">确定IP段</h3>
+<p>通常内网地址分三段：10.0.0.0/8、172.16.0.0/12以及192.168.0.0/16。在没有做任何操作之前，我们可以大概知道内网的IP地址段，不过也有些公司，在内网又会有公网IP的情况，也就是说在内网中可以访问到的IP段有很多。</p>
+<hr>
+<p>下面就主要介绍一下收集IP段的方式。</p>
+<h4 id="查看本机的ip地址">查看本机的IP地址</h4>
+<p>Windows下使用：</p>
+<pre><code>ipconfig /all
+</code></pre>
+<p>Linux下使用：</p>
+<pre><code>ifconfig -a
+</code></pre>
+<p>以Windows为例，执行结果如图：</p>
+<figure data-type="image" tabindex="1"><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613558797342-57674478-4de2-4bef-a0fa-ad30807b9fa6.png" alt="" loading="lazy"></figure>
+<p>从图中看到，我本机的IP以及下面的子网掩码，可以说明我所在的IP段是一个C段，我们就可以首先探测一下我所处的IP段，即：192.168.188.0/24。<br>
+图中还有一个IP值得注意，就是dns服务器的IP，通常在内网中，DNS服务器的IP地址未必与我们在同一个C段或者B段，所以从这里也可以看到一个存在的IP段，也是我们要做主机发现扫描的目标IP段。</p>
+<hr>
+<h4 id="查看路由表">查看路由表</h4>
+<p>Windows下使用：</p>
+<pre><code>route print
+</code></pre>
+<p>linux下使用：</p>
+<pre><code>route -n
+</code></pre>
+<p>以Windows为例，结果如图：<br>
+<img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613558898133-c1150abd-644f-48be-b3df-6f86745b4d21.png" alt="" loading="lazy"></p>
+<p>在上图可以看出，在路由表中也存在我们上面确定的IP段，这是我自己家的网络，所以没有那么复杂，大家在实际环境或者公司网络中可以看到有多个IP段，这些IP段都是我们可以访问到的，也是要做主机发现扫描的目标IP段。</p>
+<hr>
+<h4 id="查看本地连接信息">查看本地连接信息</h4>
+<p>Windows下执行：</p>
+<pre><code>netstat -ano
+</code></pre>
+<p>linux下执行：</p>
+<pre><code>netstat -anp
+</code></pre>
+<p>以Windows为例执行结果如图：</p>
+<figure data-type="image" tabindex="2"><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613559569352-d4fca6a0-07be-46f4-adcf-ad90b0b7b048.png" alt="" loading="lazy"></figure>
+<p>从图中看到有很多的IP连接信息，我们并没有看到内网的IP地址，那是因为内网没有主机与我这台主机相连，你想象一下，如果我这台主机是台服务器，那么内网用户访问服务器时必定会有连接出现，这也是我们收集内网IP段信息的一种方式。</p>
+<hr>
+<h4 id="利用net命令">利用net命令</h4>
+<p>我们知道，在Windows内网环境下，我们可以使用</p>
+<pre><code>net view
+</code></pre>
+<p>命令用于显示一个计算机上共享资源的列表。我们从这个资源列表可以获取到一些主机名，然后解析出IP地址，这样不光收集到了一些存活主机，而且还收集了一些IP段。由于没有环境，就盗用网络上的图来填补一下：</p>
+<hr>
+<p>我们还可以使用</p>
+<pre><code>net session
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613559659841-539c133e-0c77-45e8-a9a8-bbefe1316061.png" alt="" loading="lazy"></figure>
+<p>命令来查看管理员的登录IP，linux下可以使用</p>
+<pre><code>who
+</code></pre>
+<h4 id="利用dns信息">利用dns信息</h4>
+<p>当我们进入内网的时候，第一时间，我们应该先探测一下内网的dns服务是否存在dns域传送漏洞，如果存在，我们就可以剩下很多时间并且可以获取非常全的域名列表，这个列表基本很全的包含了内网所有的存活主机。如何探测dns域传送<a href="http://mp.weixin.qq.com/s?__biz=MzI5MDQ2NjExOQ==&amp;mid=2247483722&amp;idx=1&amp;sn=0ca58973b1257a410ff13111134da931&amp;chksm=ec1e3162db69b87461b7d881cc43384afa2f2a41a5d529f5ad7dc13eddfee70ad4e9136ecef5&amp;scene=21#wechat_redirect">请点我</a>。</p>
+<p>如果不存在dns域传送漏洞，在我们收集了一定的主机名之后，我们可以根据主机名的命名规则生成一份主机名字典，然后使用dns解析这些名字，获得IP之后，再根据IP确定IP段。</p>
+<h4 id="利用域信息">利用域信息</h4>
+<p>如果我们已经获取到一台域内的主机权限，那么我们就可以访问域内的所有信息，这是就可以通过域控制器查询加入域中的所有主机信息，可以使用如下命令获取：</p>
+<p>dsquery computer 以及 dsquery server</p>
+<p>获得主机以及服务器列表后，解析其IP获取IP段信息。</p>
+<hr>
+<p>用以上几种方式，在新获取到一台主机权限之后做一下这个处理，就可能会收集到更多的IP段。但是有人说了，这样做多累啊，直接使用Namp或者其他大型扫描器多线程扫描内网的所有IP段不就行了，这样做当然可以，但是这个动静多大，会造成各种安全设备报警，还没赶上进一步渗透，你就直接game over了。老板给的任务完不成了，奖金没了~~~~</p>
+<p>在内网的活动要非常谨慎，动静越小越好，否则，这篇文章的意义何在？</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[内网存活主机探测]]></title>
         <id>https://x1hy9.github.io/post/nei-wang-cun-huo-zhu-ji-tan-ce/</id>
